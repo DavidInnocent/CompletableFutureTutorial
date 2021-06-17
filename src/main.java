@@ -1,5 +1,6 @@
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class main {
     public static void main(String[] args) {
@@ -15,14 +16,42 @@ public class main {
                 .thenApply(integer -> integer*20)//
                 .thenApply(integer -> integer.toString()+" is the result")
                 .thenAcceptAsync(System.out::println)
-                .thenRun(()-> System.out.println("Operations done."));
+                .thenRun(()-> System.out.println("Operations done.")).join();
+
+        CompletableFuture.supplyAsync(()-> longNetworkProcess(5))
+                .completeOnTimeout(99,2000, TimeUnit.SECONDS)//if timesout after one second return 99
+                .thenApply(integer -> integer.toString()+" is the result")
+                .thenAcceptAsync(System.out::println)
+                .thenRun(()-> System.out.println("Operations done.")).join();
 
         CompletableFuture<Integer> completableFuture=new CompletableFuture<>();
         int value=90;
         getReady(completableFuture);
         completableFuture.complete(value);
+
+
+        //combining results from more than one completable
+        int amount=10;
+        getValue1(amount)
+                .thenCombine(getValue2(amount),((integer, integer2) -> integer.toString()+" and the next "+integer2.toString()))
+                .thenCombine(getValue3(5),((s, integer) -> s+"looping "+integer))
+                .thenAccept(
+                        s -> {
+                            System.out.println();
+                            int numb=Integer.parseInt(s.substring(s.length() - 1));
+
+//                           int numb=Integer.getInteger(String.valueOf(s.substring(s.length()-1)));
+
+                           int lop=0;
+                           while(numb>lop)
+                           {
+                               System.out.println(s);
+                               lop++;
+                           }
+                        }
+        ).join();
         try {
-            Thread.sleep(1100);
+            Thread.sleep(5100);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -32,6 +61,15 @@ public class main {
         completableFuture.thenApply(integer -> integer*3)
                 .thenApply(integer -> "Hello "+integer)
                 .thenAccept(System.out::println);
+    }
+    private static CompletableFuture<Integer> getValue1(int intt) {
+        return CompletableFuture.supplyAsync(() -> intt*3);
+    }
+    private static CompletableFuture<Integer> getValue2(int intt) {
+       return CompletableFuture.supplyAsync(()->intt*5);
+    }
+    private static CompletableFuture<Integer> getValue3(int intt) {
+       return CompletableFuture.supplyAsync(()->intt*5);
     }
 
     private static int longNetworkProcess(int i) {
