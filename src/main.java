@@ -29,8 +29,12 @@ public class main {
         getReady(completableFuture);
         completableFuture.complete(value);
 
-
-        //combining results from more than one completable
+/**
+ *
+ * thenCombine will run all the completables at once then combine the results after all have finished. if one finishes before the other. It has to wait for the other
+ * to finish
+ *
+ * */
         int amount=10;
         getValue1(amount)
                 .thenCombine(getValue2(amount),((integer, integer2) -> integer.toString()+" and the next "+integer2.toString()))
@@ -50,6 +54,16 @@ public class main {
                            }
                         }
         ).join();
+
+        /**
+        *
+         * thencompose will pipeline the result of one completable to the next one in a chain
+        * */
+
+        getValue1(amount).thenComposeAsync((integer -> getValue2(integer).thenComposeAsync(main::getValue3))).thenAccept(System.out::println);
+
+
+
         try {
             Thread.sleep(5100);
         } catch (InterruptedException e) {
